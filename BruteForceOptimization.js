@@ -32,7 +32,7 @@ const DumpScene = () => {
   let detectedRefreshRate = 0;
   let interFrame = 0;
 
-  let CONFIG = { interp: false };
+  let CONFIG = { interp: true };
   window._optConfig = CONFIG;
 
   try {
@@ -54,7 +54,7 @@ const DumpScene = () => {
   const customKeyHandler = event => {
     if (!event.ctrlKey && !event.altKey) {
       switch (event.keyCode) {
-        case 117: // F7
+        case 117: // F6
           event.preventDefault();
           toggleInterp();
           break;
@@ -64,12 +64,12 @@ const DumpScene = () => {
 
   document.addEventListener('keydown', customKeyHandler);
 
-  const showBanner = async () => {
+  const showBanner = async text => {
     const banner = document.createElement('div');
     banner.style.position = 'fixed';
     banner.style.top = '5vh';
     banner.style.right = '0';
-    banner.style.backgroundColor = !CONFIG.interp ? '#000000dd' : '#2e7ceadd';
+    banner.style.backgroundColor = !CONFIG.interp && !text ? '#000000dd' : '#2e7ceadd';
     banner.style.color = '#ffffff';
     banner.style.padding = '1vh';
     banner.style.paddingLeft = '3vh';
@@ -84,7 +84,8 @@ const DumpScene = () => {
     banner.style.transform = 'translateX(100%) skewX(-15deg)';
     banner.style.backdropFilter = 'blur(0.5vh)';
 
-    banner.textContent = `FAKEFRAMES™ - フェイクフレーム™ - ${!CONFIG.interp ? 'OFF' : 'ON'}`;
+    banner.textContent =
+      text || `FAKEFRAMES™ - フェイクフレーム™ - ${!CONFIG.interp ? 'OFF' : 'ON'}`;
 
     document.body.appendChild(banner);
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -1654,5 +1655,41 @@ const DumpScene = () => {
     const opt = options || {};
     opt.willReadFrequently = true;
     return _HTMLCanvasElement_getContext.call(this, type, opt);
+  };
+
+  // ================================================================
+  // Remove caches when saving
+  // ================================================================
+  const _DataManager_makeSaveContents = DataManager.makeSaveContents;
+  const deleteInterpreterCache = interpreter => {
+    delete interpreter.__s;
+    delete interpreter.__j;
+    if (interpreter._childInterpreter) {
+      deleteInterpreterCache(interpreter._childInterpreter);
+    }
+  };
+
+  DataManager.makeSaveContents = function () {
+    if ($gameMap._interpreter) {
+      deleteInterpreterCache($gameMap._interpreter);
+    }
+
+    if ($gameMap._events) {
+      for (const event of $gameMap._events) {
+        if (event && event._interpreter) {
+          deleteInterpreterCache(event._interpreter);
+        }
+      }
+    }
+
+    if ($gameMap._commonEvents) {
+      for (const commonEvent of $gameMap._commonEvents) {
+        if (commonEvent && commonEvent._interpreter) {
+          deleteInterpreterCache(commonEvent._interpreter);
+        }
+      }
+    }
+
+    return _DataManager_makeSaveContents.call(this);
   };
 })();
