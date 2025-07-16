@@ -1328,7 +1328,7 @@ const DumpScene = () => {
     if (!_directories.has(dirname)) {
       console.log(`Scanning ${dirname}`);
       const www = _path.dirname(nw.App.manifest.main.replace(/^file:\/\//, ''));
-      const files = _fs.readdirSync(_path.resolve('.', www, dirname));
+      const files = _fs.readdirSync(_path.resolve(nw.App.startPath, www, dirname));
       const fileMap = {};
       for (const file of files) {
         fileMap[file.toLowerCase()] = file;
