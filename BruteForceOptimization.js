@@ -84,7 +84,7 @@ const DumpScene = () => {
     banner.style.transform = 'translateX(100%) skewX(-15deg)';
     banner.style.backdropFilter = 'blur(0.5vh)';
 
-    banner.textContent = `Frame Gen - フレーム生成 - 帧生成 - ${!CONFIG.interp ? 'OFF' : 'ON'}`;
+    banner.textContent = `FAKEFRAMES™ - フェイクフレーム™ - ${!CONFIG.interp ? 'OFF' : 'ON'}`;
 
     document.body.appendChild(banner);
     await new Promise(resolve => setTimeout(resolve, 200));
