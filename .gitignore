@@ -1,0 +1,11 @@
+/*.js
+!BruteForceOptimization.js
+!BruteForceOptimizationPolidog.js
+!BruteForceOptimizationBenki.js
+!DecryptionWorker.js
+!DTextPicture.js
+!KMS_Minimap.js
+!PictureZIndex.js
+
+.vscode
+.prettierrc

@@ -1,5 +1,7 @@
 # Untendo Engine Optimization Plugins
 
+**Other Languages:** [日本語](README_ja.md)
+
 This is a collection of plugins (both original and derivative) to optimize the performance of Untendo games (Polidog Patrol and Benki Wars). This repository is not affiliated with Untendo in any way.
 
 ## LICENSE NOTICE
@@ -25,10 +27,10 @@ The following files are original works and are licensed under this repository's 
 
 ## Installation
 
-Before installing, make sure you have a original copy of either Polidog Patrol or Benki Wars. You can purchase them from [Untendo](https://www.untendo.com/).
+Before installing, make sure you have an original copy of either Polidog Patrol or Benki Wars. You can purchase them from [Untendo](https://www.untendo.com/).
 
-1. (Recommended) Download a copy of the latest (NW.js)[https://nwjs.io/], and replace the original files and uses `nw.exe` to launch the game.
-2. Download this repository, copy or replace the files in the repositories in the `www/js/plugins` directory.
+1. (Recommended) Download a copy of the latest [NW.js](https://nwjs.io/), replace the original files, and use `nw.exe` to launch the game.
+2. Download this repository, copy all the files from this repository to the `www/js/plugins` directory. Overwrite any existing files if prompted.
 3. Open `www/js/plugins.js` and add the following lines before the last line:
 
 For Polidog Patrol:
@@ -44,3 +46,31 @@ For Benki Wars:
 {"name":"BruteForceOptimization","status":true,"description":"","parameters":{}},
 {"name":"BruteForceOptimizationBenki","status":true,"description":"","parameters":{}},
 ```
+
+Note: If the game has an auto frame rate mode, please disable it and set the frame rate to 60fps, otherwise the game may be confused and drop frames even with the optimization.
+
+## Optimization Write-Up
+
+The following is a brief summary of the optimization techniques used in this repository:
+
+- A rewrite of RPG Maker MV's interpreter:
+  - Manually inlined hot paths
+  - Pre-executed all `eval`-wrapped function calls to eliminate runtime interpretation and JIT overhead
+  - Pre-computed all jump branching targets
+  - Replaced most array access function calls with direct array access, bypassing bound checks
+- Cached audio files to reduce repeated decryption
+- Offloaded decryption work to a web worker to reduce main thread stalls
+- Cached tinted pictures to reduce repeated tinting
+- Modified `DTextPicture.js`:
+  - Cached bitmaps of the same size
+  - Reduced excessive DOM element creation
+- Modified `KMS_Minimap.js`:
+  - Added double buffering to preserve already-rendered minimaps and blit unchanged areas
+  - Used custom dirty flags to update only changed pixels
+- Rewrote `PictureZIndex.js`:
+  - Sorted pictures before each render if marked dirty
+  - Removed heavy and redundant sorting multiple times per frame
+- Implemented a custom FAKEFRAMES™ (picture interpolation) framework to support high refresh rate monitors:
+  - Replaced the render loop to ensure consistent game speed across different monitors
+
+For a detailed explanation of the optimization techniques, see: [The Brutal Optimization of RPG Maker MV](https://tsdo.in/blog/optimizing-rmmv/)
