@@ -1312,7 +1312,7 @@ const DumpScene = () => {
   let _directories = null;
   let _fs = null;
   let _path = null;
-  if (typeof nw != undefined && nw.require) {
+  if (typeof nw != 'undefined' && nw.require) {
     _fs = nw.require('fs');
     _path = nw.require('path');
     _directories = new Map();
@@ -1647,25 +1647,12 @@ const DumpScene = () => {
   };
 
   // ================================================================
-  // Allow read frequently so tinting can be faster
+  // Allow read frequently so tinting and reading back can be faster
   // ================================================================
-  Bitmap.prototype._createCanvas = function (width, height) {
-    this.__canvas = this.__canvas || document.createElement('canvas');
-    this.__context = this.__canvas.getContext('2d', { willReadFrequently: true });
-
-    this.__canvas.width = Math.max(width || 0, 1);
-    this.__canvas.height = Math.max(height || 0, 1);
-
-    if (this._image) {
-      var w = Math.max(this._image.width || 0, 1);
-      var h = Math.max(this._image.height || 0, 1);
-      this.__canvas.width = w;
-      this.__canvas.height = h;
-      this._createBaseTexture(this._canvas);
-
-      this.__context.drawImage(this._image, 0, 0);
-    }
-
-    this._setDirty();
+  const _HTMLCanvasElement_getContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function __ll(type, options) {
+    const opt = options || {};
+    opt.willReadFrequently = true;
+    return _HTMLCanvasElement_getContext.call(this, type, opt);
   };
 })();
