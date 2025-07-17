@@ -1,9 +1,12 @@
 ﻿/*:
  * @plugindesc A collection of optimizations for RPG Maker MV
  * @author TsFreddie
- * @version 1.0.0
  *
- * @help This plugin provides the following optimizations:
+ * @help This plugin provides the following optimizations
+ * 
+ * Version 1.0.0
+ * 
+ * Features:
  *
  * 1. FAKEFRAMES™ - High refresh rate monitor support
  *    - This is performed by interpolating sprites. Please check this
@@ -103,8 +106,10 @@
   let interFrame = 0;
 
   const customKeyHandler = event => {
+    if (!CONFIG.interpToggle) return;
+
     if (!event.ctrlKey && !event.altKey) {
-      if (event.keyCode === 117) {
+      if (event.keyCode === CONFIG.interpToggle) {
         event.preventDefault();
         if ($gameSystem) $gameSystem.toggleFakeFrames();
         return;
