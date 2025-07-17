@@ -1773,6 +1773,8 @@
       COLOR_KEY_SEP +
       color[2] +
       COLOR_KEY_SEP +
+      color[3] +
+      COLOR_KEY_SEP +
       x +
       COLOR_KEY_SEP +
       y +
