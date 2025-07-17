@@ -3,9 +3,9 @@
  * @author TsFreddie
  *
  * @help This plugin provides the following optimizations
- * 
+ *
  * Version 1.0.0
- * 
+ *
  * Features:
  *
  * 1. FAKEFRAMES™ - High refresh rate monitor support
@@ -727,7 +727,7 @@
     }
 
     if (object == $dataMap) {
-      for (e of (object.events || [])) {
+      for (e of object.events || []) {
         const pages = (e && e.pages) || [];
         for (let p = 0; p < pages.length; p++) {
           const page = pages[p];
@@ -778,7 +778,11 @@
     }
     _Game_Event_update.apply(this, arguments);
 
-    if ($dataMap.events[this._eventId] && $dataMap.events[this._eventId].pages && $dataMap.events[this._eventId].pages[this._pageIndex]) {
+    if (
+      $dataMap.events[this._eventId] &&
+      $dataMap.events[this._eventId].pages &&
+      $dataMap.events[this._eventId].pages[this._pageIndex]
+    ) {
       const list = $dataMap.events[this._eventId].pages[this._pageIndex].list;
       if (list) {
         dataMapKeepAlive.set(list, updateCount);
@@ -1178,7 +1182,10 @@
     RemovingPictures.add(index);
 
     // reset interp for erased pictures
-    const unsortedPictures = SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset.__unsortedPictures;
+    const unsortedPictures =
+      SceneManager._scene &&
+      SceneManager._scene._spriteset &&
+      SceneManager._scene._spriteset.__unsortedPictures;
     if (unsortedPictures) {
       unsortedPictures[index]._ilpx = null;
       unsortedPictures[index]._ipx = null;
