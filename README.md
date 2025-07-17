@@ -1,4 +1,4 @@
-# Untendo Engine Optimization Plugins
+# Optimization Plugins for RPG Maker MV
 
 **Other Languages:** [日本語](README_ja.md)
 
@@ -23,7 +23,6 @@ The following files are original works and are licensed under this repository's 
 - BruteForceOptimization.js
 - BruteForceOptimizationPolidog.js
 - BruteForceOptimizationBenki.js
-- DecryptionWorker.js
 
 ## Installation
 
@@ -51,7 +50,7 @@ Note: If the game has an auto framerate mode, please disable it and set the fram
 
 ## Other RPG Maker MV Games
 
-The `BruteForceOptimization.js` plugin is setup to be used as a generic RPG Maker MV plugin, however, I have not tested it on any other games. If you are interested in using it for your own game, I recommend reading the optimization write-up below to understand what the plugin does. You may need to modify the plugin to work with your game, or it may not work at all.
+The `BruteForceOptimization.js` plugin is setup to be a generic RPG Maker MV plugin, however, I have not tested it on any other games. If you are interested in using it for your own game, I recommend reading the optimization write-up below to understand what the plugin does. You may need to modify the plugin to work with your game, or it may not work at all.
 
 ## Optimization Write-Up
 
