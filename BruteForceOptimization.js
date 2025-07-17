@@ -1,6 +1,7 @@
 ﻿/*:
  * @plugindesc A collection of optimizations for RPG Maker MV
  * @author TsFreddie
+ * @version 1.0.0
  *
  * @help This plugin provides the following optimizations:
  *
