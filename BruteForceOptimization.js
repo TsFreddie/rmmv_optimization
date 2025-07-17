@@ -384,16 +384,13 @@ const DumpScene = () => {
 
     let lagCounter = 0;
     const isHfr = detectedRefreshRate > hfrModeThreshold;
-    let isFirstFrameNonHfr = !isHfr;
 
-    while (isFirstFrameNonHfr || frameTime >= this.gameInterval) {
+    while (frameTime >= this.gameInterval) {
       this.lastUpdate += this.gameInterval;
 
       restoreSceneCollection();
       this.____updateInternal();
       stepSceneCollection();
-
-      isFirstFrameNonHfr = false;
 
       lagCounter++;
       if (lagCounter >= 2 || isNaN(this.lastUpdate)) {
