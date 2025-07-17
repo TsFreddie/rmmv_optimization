@@ -167,7 +167,7 @@
   };
 
   const resetInterp = () => {
-    const spriteset = SceneManager._scene?._spriteset;
+    const spriteset = SceneManager._scene && SceneManager._scene._spriteset;
     if (spriteset) {
       spriteset._ilpx = null;
       spriteset._ipx = null;
@@ -190,7 +190,7 @@
   };
 
   const restoreSceneCollection = () => {
-    const spriteset = SceneManager._scene?._spriteset;
+    const spriteset = SceneManager._scene && SceneManager._scene._spriteset;
     if (spriteset) {
       spriteset._interpRestore();
       for (const sprite of spriteset._characterSprites) {
@@ -205,7 +205,7 @@
   };
 
   const stepSceneCollection = () => {
-    const spriteset = SceneManager._scene?._spriteset;
+    const spriteset = SceneManager._scene && SceneManager._scene._spriteset;
     if (spriteset) {
       spriteset._interpStep();
       for (const sprite of spriteset._characterSprites) {
@@ -222,7 +222,7 @@
   const updateSceneCollection = () => {
     if (!$gameSystem || !$gameSystem.isFakeFramesOn()) return;
 
-    const spriteset = SceneManager._scene?._spriteset;
+    const spriteset = SceneManager._scene && SceneManager._scene._spriteset;
     if (spriteset) {
       spriteset._interpUpdate();
       for (const sprite of spriteset._characterSprites) {
@@ -276,10 +276,11 @@
     this._idsy = this._isy - this._ilsy;
     this._idr = this._ir - this._ilr;
 
-    const interpId = this.bitmap?.__interpId;
+    const interpId = (this.bitmap && this.bitmap.__interpId) || undefined;
 
     if (
-      this.bitmap?.__noInterp || // bitmap with no interp tag should not be interpolated
+      !this.bitmap || // no bitmap
+      this.bitmap.__noInterp || // bitmap with no interp tag should not be interpolated
       this._ildti != this.dTextInfo || // make sure text changes are not interpolated
       this._iliid != interpId || // if interp id changed, jump to current position immediately
       Math.abs(this._idpx) > INTERP_TELEPORT_THRESHOLD ||
@@ -289,7 +290,7 @@
       Math.sign(this._isx) !== Math.sign(this._ilsx) ||
       Math.sign(this._isy) !== Math.sign(this._ilsy)
     ) {
-      if (this.bitmap?.__scrolling) {
+      if (this.bitmap && this.bitmap.__scrolling) {
         // This is a scrolling sprite, pretend the last frame was already teleported back to keep it smooth.
         this._ilpx = this._ipx - this._ildpx;
         this._ilpy = this._ipy - this._ildpy;
@@ -590,7 +591,11 @@
       const command = list[i];
 
       const indent = command.indent;
-      const nextIndent = list[i + 1]?.indent ?? -1;
+      let nextIndent = list[i + 1] && list[i + 1].indent;
+      if (nextIndent == null) {
+        nextIndent = -1;
+      }
+
       if (nextIndent > indent) {
         branchIndent[indent] = i;
       } else {
@@ -622,7 +627,7 @@
         if (line[0] != '/' && line[1] != '/') {
           scriptLines.push(line);
         }
-        while (list[cur + 1]?.code == 655) {
+        while (list[cur + 1] && list[cur + 1].code == 655) {
           cur++;
           line = transformScript(list[cur].parameters[0]);
           if (line[0] != '/' && line[1] != '/') {
@@ -639,7 +644,7 @@
       }
 
       if (command.code == 108) {
-        while (list[cur + 1]?.code == 408) {
+        while (list[cur + 1] && list[cur + 1].code == 408) {
           cur++;
         }
         jumpCache[index] = cur;
@@ -705,18 +710,18 @@
 
     if (object == $dataCommonEvents) {
       for (e of object) {
-        const list = e?.list;
+        const list = e && e.list;
         if (!list) continue;
         preCompileEvents(list);
       }
     }
 
     if (object == $dataMap) {
-      for (e of object.events ?? []) {
-        const pages = e?.pages ?? [];
+      for (e of (object.events || [])) {
+        const pages = (e && e.pages) || [];
         for (let p = 0; p < pages.length; p++) {
           const page = pages[p];
-          const list = page?.list;
+          const list = page && page.list;
           if (!list) continue;
           preCompileEvents(list);
           dataMapKeepAlive.set(list, updateCount);
@@ -727,7 +732,7 @@
 
   const _Game_CommonEvent_update = Game_CommonEvent.prototype.update;
   Game_CommonEvent.prototype.update = function () {
-    const interpreterList = this._interpreter?._list;
+    const interpreterList = this._interpreter && this._interpreter._list;
     if (interpreterList) {
       const cache = compileCache.get(interpreterList);
       if (cache != null) {
@@ -747,7 +752,7 @@
   // Keep event alive during update
   const _Game_Event_update = Game_Event.prototype.update;
   Game_Event.prototype.update = function () {
-    const interpreterList = this._interpreter?._list;
+    const interpreterList = this._interpreter && this._interpreter._list;
     if (interpreterList) {
       const cache = compileCache.get(interpreterList);
       if (cache != null) {
@@ -762,15 +767,20 @@
       }
     }
     _Game_Event_update.apply(this, arguments);
-    const list = $dataMap.events[this._eventId]?.pages?.[this._pageIndex]?.list;
-    dataMapKeepAlive.set(list, updateCount);
+
+    if ($dataMap.events[this._eventId] && $dataMap.events[this._eventId].pages && $dataMap.events[this._eventId].pages[this._pageIndex]) {
+      const list = $dataMap.events[this._eventId].pages[this._pageIndex].list;
+      if (list) {
+        dataMapKeepAlive.set(list, updateCount);
+      }
+    }
   };
 
   // Make sure we recompile events when loading from a save file
   const _Game_Event_refresh = Game_Event.prototype.refresh;
   Game_Event.prototype.refresh = function () {
     _Game_Event_refresh.apply(this, arguments);
-    const list = this._interpreter?._list;
+    const list = this._interpreter && this._interpreter._list;
     if (list) {
       if (compileCache.get(list) != null) return;
       console.log('On the fly compiling non setup');
@@ -1158,7 +1168,7 @@
     RemovingPictures.add(index);
 
     // reset interp for erased pictures
-    const unsortedPictures = SceneManager._scene?._spriteset?.__unsortedPictures;
+    const unsortedPictures = SceneManager._scene && SceneManager._scene._spriteset && SceneManager._scene._spriteset.__unsortedPictures;
     if (unsortedPictures) {
       unsortedPictures[index]._ilpx = null;
       unsortedPictures[index]._ipx = null;
@@ -1208,10 +1218,10 @@
     }
     const pictures = this.__unsortedPictures;
     for (const id of ActivePictures) {
-      pictures[id]?.update?.();
+      if (pictures[id] && pictures[id].update) pictures[id].update();
     }
     for (const id of RemovingPictures) {
-      pictures[id]?.update?.();
+      if (pictures[id] && pictures[id].update) pictures[id].update();
     }
 
     RemovingPictures.clear();
@@ -1763,8 +1773,6 @@
       COLOR_KEY_SEP +
       color[2] +
       COLOR_KEY_SEP +
-      color[3] +
-      COLOR_KEY_SEP +
       x +
       COLOR_KEY_SEP +
       y +
@@ -1777,7 +1785,7 @@
 
   Bitmap.prototype.__getOrCreateTintCache = function (tone, color, x, y, w, h) {
     const key = getColorKey(tone, color, x, y, w, h);
-    let cache = this.__tintCache?.get?.(key);
+    let cache = this.__tintCache && this.__tintCache.get(key);
     if (cache) {
       return cache;
     }
@@ -1869,7 +1877,7 @@
 
     if (realW > 0 && realH > 0) {
       if (this._needsTint()) {
-        if (this._bitmap?.__cacheTint) {
+        if (this._bitmap && this._bitmap.__cacheTint) {
           const cache = this._bitmap.__getOrCreateTintCache(
             this._colorTone,
             this._blendColor,

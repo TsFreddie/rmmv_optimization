@@ -39,7 +39,10 @@
     if (_sortDirty) {
       _sortDirty = false;
       const spriteset = SceneManager._scene._spriteset;
-      const children = spriteset?._pictureContainer?.children;
+      let children;
+      if (spriteset && spriteset._pictureContainer) {
+        children = spriteset._pictureContainer.children;
+      }
 
       if (indexOverride.length == 0) {
         if (children) {
