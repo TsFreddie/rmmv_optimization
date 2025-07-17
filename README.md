@@ -4,7 +4,7 @@
 
 This is a collection of plugins (both original and derivative) to optimize the performance of Untendo games (Polidog Patrol and Benki Wars). This repository is not affiliated with Untendo in any way.
 
-https://github.com/user-attachments/assets/bc801946-5f8d-461b-8c79-cd95c80beba8
+https://github.com/user-attachments/assets/f48a3ef8-bfc9-4a6f-9ddc-cd9a475d4120
 
 ## LICENSE NOTICE
 
