@@ -1,24 +1,93 @@
-﻿// ================================================================
-// Scene Dumper - For debugging
-// ================================================================
-const DumpScene = () => {
-  const list = [];
-  const collectNodes = (obj, depth, list) => {
-    if (!obj) return;
-    list.push(`${Array(depth).fill(' ').join('')}${obj.name ?? ''}(${obj.constructor.name})`);
-    for (const child of obj.children) {
-      if (child?.children) {
-        collectNodes(child, depth + 1, list);
-      }
-    }
-  };
-  collectNodes(SceneManager._scene, 0, list);
-  const result = list.join('\n');
-  var fs = require('fs');
-  fs.writeFileSync('dump.txt', result);
-};
+﻿/*:
+ * @plugindesc A collection of optimizations for RPG Maker MV
+ * @author TsFreddie
+ *
+ * @help This plugin provides the following optimizations:
+ *
+ * 1. FAKEFRAMES™ - High refresh rate monitor support
+ *    - This is performed by interpolating sprites. Please check this
+ *    - plugin's source code on how to configure this feature to
+ *    - eliminate interpolation visual artifacts.
+ *
+ *    - See: Bitmap Tags
+ *
+ *    - You can also control FAKEFRAMES™ features with script:
+ *    - `$gameSystem.toggleFakeFrames()`
+ *    - `$gameSystem.setFakeFrames(true)`
+ *    - `$gameSystem.setFakeFrames(false)`
+ *
+ *    - You can get the current FAKEFRAMES™ status with script:
+ *    - `$gameVariables.setValue(100, $gameSystem.isFakeFramesOn())`
+ *
+ * 2. Tint caching
+ *    - Cache tinted pictures to reduce repeated tinting operations.
+ *    - Please check this plugin's source code on how to configure this
+ *    - feature to enable them.
+ *
+ *    - See: Bitmap Tags
+ *
+ * 3. Picture optimizations
+ *    - Allows you to use `$gameScreen.showPicture` to assign
+ *    - very high picture IDs without tanking performance.
+ *
+ * 4. Interpreter optimizations
+ *    - Speed up the script execution speed by up to 20x.
+ *
+ * 5. Threaded decryption
+ *    - Reduce main thread stalls by offloading decryption
+ *    - work to a web worker. Only affect exported games.
+ *
+ * Other than FAKEFRAMES™ and tint caching, all other optimizations
+ *     are not configurable and are always enabled.
+ *
+ * @param fakeframes
+ * @text FAKEFRAMES™
+ * @type boolean
+ * @desc Enable FAKEFRAMES™ by default - High refresh rate monitor support
+ * @default true
+ *
+ * @param fakeframes_toggle
+ * @text FAKEFRAMES™ Keyboard Toggle
+ * @type number
+ * @desc Keycode to toggle FAKEFRAMES™ (0 to disable). Default to F6 (117).
+ * @default 117
+ */
 
 (() => {
+  /**
+   * Bitmap Tags
+   *
+   * You can modify the `_customImageTag` function to add custom tags to images.
+   * You can also create another plugin just to override this function.
+   *
+   * Supported tags:
+   *  this.__scrolling : Scrolling sprites, prevent jitter when the sprite teleports.
+   *  this.__noInterp : Disable interpolation for this image.
+   *  this.__interpId : Disable interpolation from or to different interpolation id.
+   *  this.__cacheTint : Cache tint textures, optimize flickering sprites.
+   *     - Please make sure the tint switches between only a few colors.
+   *     - Smooth tinting or random tinting will create one texture for each color, which is not recommended.
+   */
+
+  if (!Bitmap.prototype._customImageTag) {
+    Bitmap.prototype._customImageTag = function () {
+      // Example:
+      // if (this.url == "img/pictures/Weather.png") {
+      //   this.__scrolling = true;
+      // }
+    };
+  }
+
+  var pluginName = 'BruteForceOptimization';
+  const parameters = PluginManager.parameters(pluginName);
+  const CONFIG = {
+    interpDefault:
+      parameters['fakeframes'] == 'true' || typeof parameters['fakeframes'] == 'undefined',
+    interpToggle: parseInt(
+      typeof parameters['fakeframes_toggle'] == 'undefined' ? 117 : parameters['fakeframes_toggle']
+    ),
+  };
+
   // ================================================================
   // Interpolation - High refresh rate monitor support
   // ================================================================
@@ -32,44 +101,44 @@ const DumpScene = () => {
   let detectedRefreshRate = 0;
   let interFrame = 0;
 
-  let CONFIG = { interp: true };
-  window._optConfig = CONFIG;
-
-  try {
-    var fs = require('fs');
-    CONFIG = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-    window._optConfig = CONFIG;
-  } catch (e) {
-    console.log('Failed to load config.json');
-  }
-
-  const saveConfig = () => {
-    try {
-      fs.writeFileSync('config.json', JSON.stringify(CONFIG, null, 2));
-    } catch (e) {
-      console.log('Failed to save config.json');
-    }
-  };
-
   const customKeyHandler = event => {
     if (!event.ctrlKey && !event.altKey) {
-      switch (event.keyCode) {
-        case 117: // F6
-          event.preventDefault();
-          toggleInterp();
-          break;
+      if (event.keyCode === 117) {
+        event.preventDefault();
+        if ($gameSystem) $gameSystem.toggleFakeFrames();
+        return;
       }
     }
   };
 
   document.addEventListener('keydown', customKeyHandler);
 
+  Game_System.prototype.isFakeFramesOn = function () {
+    if (this.__interp == null) return !!CONFIG.interpDefault;
+    return this.__interp;
+  };
+
+  Game_System.prototype.setFakeFrames = function (value) {
+    value = !!value;
+    if (this.isFakeFramesOn() === value) return;
+    this.__interp = value;
+    resetInterp();
+    showBanner();
+  };
+
+  Game_System.prototype.toggleFakeFrames = function () {
+    this.__interp = !this.isFakeFramesOn();
+    resetInterp();
+    showBanner();
+  };
+
   const showBanner = async text => {
+    const enabled = $gameSystem && $gameSystem.isFakeFramesOn();
     const banner = document.createElement('div');
     banner.style.position = 'fixed';
     banner.style.top = '5vh';
     banner.style.right = '0';
-    banner.style.backgroundColor = !CONFIG.interp && !text ? '#000000dd' : '#2e7ceadd';
+    banner.style.backgroundColor = !enabled && !text ? '#000000dd' : '#2e7ceadd';
     banner.style.color = '#ffffff';
     banner.style.padding = '1vh';
     banner.style.paddingLeft = '3vh';
@@ -84,8 +153,7 @@ const DumpScene = () => {
     banner.style.transform = 'translateX(100%) skewX(-15deg)';
     banner.style.backdropFilter = 'blur(0.5vh)';
 
-    banner.textContent =
-      text || `FAKEFRAMES™ - フェイクフレーム™ - ${!CONFIG.interp ? 'OFF' : 'ON'}`;
+    banner.textContent = text || `FAKEFRAMES™ - フェイクフレーム™ - ${!enabled ? 'OFF' : 'ON'}`;
 
     document.body.appendChild(banner);
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -98,11 +166,7 @@ const DumpScene = () => {
     document.body.removeChild(banner);
   };
 
-  const toggleInterp = () => {
-    CONFIG.interp = !CONFIG.interp;
-    saveConfig();
-    showBanner();
-
+  const resetInterp = () => {
     const spriteset = SceneManager._scene?._spriteset;
     if (spriteset) {
       spriteset._ilpx = null;
@@ -124,8 +188,6 @@ const DumpScene = () => {
       }
     }
   };
-
-  window._toggleInterp = toggleInterp;
 
   const restoreSceneCollection = () => {
     const spriteset = SceneManager._scene?._spriteset;
@@ -158,7 +220,7 @@ const DumpScene = () => {
   };
 
   const updateSceneCollection = () => {
-    if (!CONFIG.interp) return;
+    if (!$gameSystem || !$gameSystem.isFakeFramesOn()) return;
 
     const spriteset = SceneManager._scene?._spriteset;
     if (spriteset) {
@@ -185,14 +247,6 @@ const DumpScene = () => {
       this.transform.rotation = this._ir;
     }
   };
-
-  // Override this to customize interpolation tags
-  // Supported tags:
-  // this.__scrolling : Scrolling picture
-  // this.__noInterp : Disable interpolation for this
-  // this.__interpId : Disable interpolation from or to different interpolation id
-  // this.__cacheTint : Cache tint textures
-  Bitmap.prototype._customImageTag = function () {};
 
   // Mark scrolling pictures
   const _Bitmap_onLoad = Bitmap.prototype._onLoad;
@@ -1359,7 +1413,219 @@ const DumpScene = () => {
   // ================================================================
   // Decryption Worker - Threaded decryption
   // ================================================================
-  const DecryptionWorker = new Worker('js/plugins/DecryptionWorker.js');
+  const WorkerCode = () => {
+    const _headerlength = 16;
+    const SIGNATURE = '5250474d56000000';
+    const VER = '000301';
+    const REMAIN = '0000000000';
+
+    const cutArrayHeader = (arrayBuffer, length) => {
+      return arrayBuffer.slice(length);
+    };
+
+    const _readFourCharacters = (array, index) => {
+      var string = '';
+      for (var i = 0; i < 4; i++) {
+        string += String.fromCharCode(array[index + i]);
+      }
+      return string;
+    };
+
+    const _readLittleEndian = (array, index) => {
+      return (
+        array[index + 3] * 0x1000000 +
+        array[index + 2] * 0x10000 +
+        array[index + 1] * 0x100 +
+        array[index + 0]
+      );
+    };
+
+    const _readBigEndian = (array, index) => {
+      return (
+        array[index + 0] * 0x1000000 +
+        array[index + 1] * 0x10000 +
+        array[index + 2] * 0x100 +
+        array[index + 3]
+      );
+    };
+
+    const _readMetaData = (array, index, size, info) => {
+      for (var i = index; i < index + size - 10; i++) {
+        if (_readFourCharacters(array, i) === 'LOOP') {
+          var text = '';
+          while (array[i] > 0) {
+            text += String.fromCharCode(array[i++]);
+          }
+          if (text.match(/LOOPSTART=([0-9]+)/)) {
+            info._loopStart = parseInt(RegExp.$1);
+          }
+          if (text.match(/LOOPLENGTH=([0-9]+)/)) {
+            info._loopLength = parseInt(RegExp.$1);
+          }
+          if (text == 'LOOPSTART' || text == 'LOOPLENGTH') {
+            var text2 = '';
+            i += 16;
+            while (array[i] > 0) {
+              text2 += String.fromCharCode(array[i++]);
+            }
+            if (text == 'LOOPSTART') {
+              info._loopStart = parseInt(text2);
+            } else {
+              info._loopLength = parseInt(text2);
+            }
+          }
+        }
+      }
+    };
+
+    const _readOgg = (array, info) => {
+      var index = 0;
+      while (index < array.length) {
+        if (_readFourCharacters(array, index) === 'OggS') {
+          index += 26;
+          var vorbisHeaderFound = false;
+          var numSegments = array[index++];
+          var segments = [];
+          for (var i = 0; i < numSegments; i++) {
+            segments.push(array[index++]);
+          }
+          for (i = 0; i < numSegments; i++) {
+            if (_readFourCharacters(array, index + 1) === 'vorb') {
+              var headerType = array[index];
+              if (headerType === 1) {
+                info._sampleRate = _readLittleEndian(array, index + 12);
+              } else if (headerType === 3) {
+                _readMetaData(array, index, segments[i], info);
+              }
+              vorbisHeaderFound = true;
+            }
+            index += segments[i];
+          }
+          if (!vorbisHeaderFound) {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+    };
+
+    const _readMp4 = (array, info) => {
+      if (_readFourCharacters(array, 4) === 'ftyp') {
+        var index = 0;
+        while (index < array.length) {
+          var size = _readBigEndian(array, index);
+          var name = _readFourCharacters(array, index + 4);
+          if (name === 'moov') {
+            index += 8;
+          } else {
+            if (name === 'mvhd') {
+              info._sampleRate = _readBigEndian(array, index + 20);
+            }
+            if (name === 'udta' || name === 'meta') {
+              _readMetaData(array, index, size, info);
+            }
+            index += size;
+            if (size <= 1) {
+              break;
+            }
+          }
+        }
+      }
+    };
+
+    const decryptArrayBuffer = (arrayBuffer, encryptionKey) => {
+      if (!arrayBuffer) return null;
+
+      const key = encryptionKey.split(/(.{2})/).filter(Boolean);
+      var header = new Uint8Array(arrayBuffer, 0, _headerlength);
+
+      var i;
+      var ref = SIGNATURE + VER + REMAIN;
+      var refBytes = new Uint8Array(16);
+      for (i = 0; i < _headerlength; i++) {
+        refBytes[i] = parseInt('0x' + ref.substr(i * 2, 2), 16);
+      }
+      for (i = 0; i < _headerlength; i++) {
+        if (header[i] !== refBytes[i]) {
+          throw new Error('Header is wrong');
+        }
+      }
+
+      arrayBuffer = cutArrayHeader(arrayBuffer, _headerlength);
+      var view = new DataView(arrayBuffer);
+
+      if (arrayBuffer) {
+        var byteArray = new Uint8Array(arrayBuffer);
+        for (i = 0; i < _headerlength; i++) {
+          byteArray[i] = byteArray[i] ^ parseInt(key[i], 16);
+          view.setUint8(i, byteArray[i]);
+        }
+      }
+
+      return arrayBuffer;
+    };
+
+    onmessage = e => {
+      const data = e.data;
+      if (data.mode == 0) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', data.url);
+        xhr.responseType = 'arraybuffer';
+        xhr.send();
+        xhr.addEventListener('load', () => {
+          if (xhr.status < 400) {
+            const workerResult = {
+              id: data.id,
+              arrayBuffer: decryptArrayBuffer(xhr.response, data.key),
+            };
+            postMessage(workerResult);
+          } else {
+            postMessage({ id: data.id, error: true });
+          }
+        });
+        xhr.addEventListener('error', info => {
+          postMessage({ id: data.id, error: true });
+        });
+      }
+      if (data.mode == 1) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', data.url);
+        xhr.responseType = 'arraybuffer';
+        xhr.send();
+        xhr.addEventListener('load', () => {
+          if (xhr.status < 400) {
+            const decryptedAudioBuffer = decryptArrayBuffer(xhr.response, data.key);
+            const info = {};
+            const audioBufferView = new Uint8Array(decryptedAudioBuffer);
+            _readOgg(audioBufferView, info);
+            _readMp4(audioBufferView, info);
+
+            const workerResult = {
+              id: data.id,
+              arrayBuffer: decryptedAudioBuffer,
+              info: info,
+            };
+            postMessage(workerResult);
+          } else {
+            postMessage({ id: data.id, error: true });
+          }
+        });
+        xhr.addEventListener('error', info => {
+          postMessage({ id: data.id, error: true });
+        });
+      }
+    };
+  };
+
+  const DecryptionWorker = new Worker(
+    URL.createObjectURL(
+      new Blob([`(${WorkerCode.toString()})()`], {
+        type: 'application/javascript',
+      })
+    )
+  );
+
   DecryptionWorker.onmessage = e => {
     const data = e.data;
     const callback = Callbacks.get(data.id);
@@ -1414,12 +1680,11 @@ const DumpScene = () => {
     return dst;
   }
 
-  /**
-   * @method _load
-   * @param {String} url
-   * @private
-   */
+  const _WebAudio_load = WebAudio.prototype._load;
   WebAudio.prototype._load = function (url) {
+    // fallback to original method if not encrypted
+    if (!Decrypter.hasEncryptedAudio) return _WebAudio_load.call(this, url);
+
     if (WebAudio._context) {
       const cachedAudio = audioCache.get(url);
 

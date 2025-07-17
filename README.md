@@ -47,7 +47,11 @@ For Benki Wars:
 {"name":"BruteForceOptimizationBenki","status":true,"description":"","parameters":{}},
 ```
 
-Note: If the game has an auto frame rate mode, please disable it and set the frame rate to 60fps, otherwise the game may be confused and drop frames even with the optimization.
+Note: If the game has an auto framerate mode, please disable it and set the frame rate to 60fps, otherwise the game may be confused and drop frames even with the optimization.
+
+## Other RPG Maker MV Games
+
+The `BruteForceOptimization.js` plugin is setup to be used as a generic RPG Maker MV plugin, however, I have not tested it on any other games. If you are interested in using it for your own game, I recommend reading the optimization write-up below to understand what the plugin does. You may need to modify the plugin to work with your game, or it may not work at all.
 
 ## Optimization Write-Up
 
@@ -70,7 +74,7 @@ The following is a brief summary of the optimization techniques used in this rep
 - Rewrote `PictureZIndex.js`:
   - Sorted pictures before each render if marked dirty
   - Removed heavy and redundant sorting multiple times per frame
-- Implemented a custom FAKEFRAMES™ (picture interpolation) framework to support high refresh rate monitors:
-  - Replaced the render loop to ensure consistent game speed across different monitors
+- Implemented a custom FAKEFRAMES™ (picture interpolation) framework to support high refresh rate monitors
+  - FAKEFRAMES™ is not a trademark. The ™ symbol is for part of the feature name for comedic effect.
 
 For a detailed explanation of the optimization techniques, see: [The Brutal Optimization of RPG Maker MV](https://tsdo.in/blog/optimizing-rmmv/)
