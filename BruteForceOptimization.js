@@ -456,7 +456,7 @@
       stepSceneCollection();
 
       lagCounter++;
-      if (lagCounter >= 2 || isNaN(this.lastUpdate)) {
+      if (lagCounter >= 3 || isNaN(this.lastUpdate)) {
         this.lastUpdate = now;
         break;
       }
