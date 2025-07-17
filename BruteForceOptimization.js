@@ -445,9 +445,11 @@
 
     let lagCounter = 0;
     const isHfr = detectedRefreshRate > hfrModeThreshold;
+    let updated = false;
 
-    while (frameTime >= this.gameInterval) {
+    while (this.gameInterval - frameTime < 0.001) {
       this.lastUpdate += this.gameInterval;
+      updated = true;
 
       restoreSceneCollection();
       this.____updateInternal();
@@ -458,13 +460,15 @@
         this.lastUpdate = now;
         break;
       }
-      frameTime -= this.gameInterval;
+      frameTime = now - this.lastUpdate;
     }
 
     interFrame = Math.min(Math.max((now - this.lastUpdate) / this.gameInterval, 0), 1);
     if (isHfr) updateSceneCollection();
-    this.renderScene();
-    this.lastRender = now;
+    if (updated || isHfr) {
+      this.renderScene();
+      this.lastRender = now;
+    }
   };
 
   SceneManager.updateMain = function () {
