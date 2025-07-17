@@ -29,20 +29,24 @@
 
 1. （推奨）最新の [NW.js](https://nwjs.io/) をダウンロードし、元のファイルを置き換えた上で `nw.exe` を使ってゲームを起動してください。
 2. このリポジトリをダウンロードし、すべてのファイルを `www/js/plugins` ディレクトリへコピーしてください。上書きするよう促された場合はそのまま上書きしてください。
-3. `www/js/plugins.js` を開き、以下の行を最後の行の前に追加してください：
+3. `www/js/plugins.js` を開き、以下の行をファイルの最後に追加してください：
 
 ポリドッグパトロール 用:
 
-```
-{"name":"BruteForceOptimization","status":true,"description":"","parameters":{}},
-{"name":"BruteForceOptimizationPolidog","status":true,"description":"","parameters":{}},
+```js
+$plugins.push(
+    { "name": "BruteForceOptimization", "status": true, "description": "", "parameters": {} },
+    { "name": "BruteForceOptimizationPolidog", "status": true, "description": "", "parameters": {} },
+);
 ```
 
 便機戦争 用:
 
-```
-{"name":"BruteForceOptimization","status":true,"description":"","parameters":{}},
-{"name":"BruteForceOptimizationBenki","status":true,"description":"","parameters":{}},
+```js
+$plugins.push(
+    { "name": "BruteForceOptimization", "status": true, "description": "", "parameters": {} },
+    { "name": "BruteForceOptimizationBenki", "status": true, "description": "", "parameters": {} },
+);
 ```
 
 注：ゲームに自動フレームレートモードがある場合は、必ずフレームレートを 60fps に設定してください。最適化が施されていても、ゲームが混乱してフレーム落ちが発生する可能性があります。

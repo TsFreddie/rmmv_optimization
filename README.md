@@ -30,20 +30,24 @@ Before installing, make sure you have an original copy of either Polidog Patrol 
 
 1. (Recommended) Download a copy of the latest [NW.js](https://nwjs.io/), replace the original files, and use `nw.exe` to launch the game.
 2. Download this repository, copy all the files from this repository to the `www/js/plugins` directory. Overwrite any existing files if prompted.
-3. Open `www/js/plugins.js` and add the following lines before the last line:
+3. Open `www/js/plugins.js` and add the following lines at the end of the file:
 
 For Polidog Patrol:
 
-```
-{"name":"BruteForceOptimization","status":true,"description":"","parameters":{}},
-{"name":"BruteForceOptimizationPolidog","status":true,"description":"","parameters":{}},
+```js
+$plugins.push(
+    { "name": "BruteForceOptimization", "status": true, "description": "", "parameters": {} },
+    { "name": "BruteForceOptimizationPolidog", "status": true, "description": "", "parameters": {} },
+);
 ```
 
 For Benki Wars:
 
-```
-{"name":"BruteForceOptimization","status":true,"description":"","parameters":{}},
-{"name":"BruteForceOptimizationBenki","status":true,"description":"","parameters":{}},
+```js
+$plugins.push(
+    { "name": "BruteForceOptimization", "status": true, "description": "", "parameters": {} },
+    { "name": "BruteForceOptimizationBenki", "status": true, "description": "", "parameters": {} },
+);
 ```
 
 Note: If the game has an auto framerate mode, please disable it and set the frame rate to 60fps, otherwise the game may be confused and drop frames even with the optimization.
