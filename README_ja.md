@@ -6,18 +6,18 @@
 
 ## ライセンスに関する注意
 
-以下のファイルは Triacontane の派生作品です：
+以下のファイルは Triacontane の派生プラグインです：
 
 - DTextPicture.js
 - KMS_Minimap.js
 
-それぞれのライセンスはファイルヘッダーに記載されています。派生作品には各ファイルの末尾に `// HACK:` ヘッダーが付けられています。派生作品は本リポジトリのライセンスのもと、元のライセンスと同様に取り扱われます。
+それぞれのライセンスはファイルヘッダーに記載されています。派生プラグインには各ファイルの末尾に `// HACK:` ヘッダーが付けられています。派生プラグインは本リポジトリのライセンスのもと、元のライセンスと同様に取り扱われます。
 
 以下のファイルはプロトコル互換の書き換えであり、本リポジトリのライセンスに基づいて提供されます：
 
 - PictureZIndex.js
 
-以下のファイルはオリジナル作品であり、本リポジトリのライセンスに基づいて提供されます：
+以下のファイルはオリジナルプラグインであり、本リポジトリのライセンスに基づいて提供されます：
 
 - BruteForceOptimization.js
 - BruteForceOptimizationPolidog.js
@@ -35,8 +35,8 @@
 
 ```js
 $plugins.push(
-    { "name": "BruteForceOptimization", "status": true, "description": "", "parameters": {} },
-    { "name": "BruteForceOptimizationPolidog", "status": true, "description": "", "parameters": {} },
+  { name: 'BruteForceOptimization', status: true, description: '', parameters: {} },
+  { name: 'BruteForceOptimizationPolidog', status: true, description: '', parameters: {} }
 );
 ```
 
@@ -44,8 +44,8 @@ $plugins.push(
 
 ```js
 $plugins.push(
-    { "name": "BruteForceOptimization", "status": true, "description": "", "parameters": {} },
-    { "name": "BruteForceOptimizationBenki", "status": true, "description": "", "parameters": {} },
+  { name: 'BruteForceOptimization', status: true, description: '', parameters: {} },
+  { name: 'BruteForceOptimizationBenki', status: true, description: '', parameters: {} }
 );
 ```
 
@@ -53,7 +53,7 @@ $plugins.push(
 
 ## その他の RPG ツクール MV ゲーム
 
-`BruteForceOptimization.js` プラグインは汎用的な RPG ツクール MV プラグインとして設定されていますが、他のゲームでのテストは行っていません。ご自身のゲームで使用することに興味がある場合は、プラグインが何を行うかを理解するため、以下の最適化の記述をお読みになることをお勧めします。ゲームに合わせてプラグインを修正する必要があるか、全く動作しない可能性があります。
+`BruteForceOptimization.js` プラグインは汎用的な RPG ツクール MV プラグインとして設定されていますが、他のゲームでのテストは行っていません。ご自身のゲームで使用することに興味がある場合は、プラグインが何を行うかを理解するため、プラグインソースコードをお読みになることをお勧めします。
 
 ## 最適化の記述
 
