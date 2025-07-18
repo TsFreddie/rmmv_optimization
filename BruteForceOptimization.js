@@ -1392,58 +1392,6 @@
   };
 
   // ================================================================
-  // File system - Case sensitivity handler
-  // ================================================================
-  let _directories = null;
-  let _fs = null;
-  let _path = null;
-  if (typeof nw != 'undefined' && nw.require) {
-    _fs = nw.require('fs');
-    _path = nw.require('path');
-    _directories = new Map();
-  }
-
-  const transformPath = path => {
-    // only transform if we are in nw.js
-    if (!_fs || !_path || !_directories) return path;
-
-    const dirname = _path.dirname(path);
-    const basename = _path.basename(path);
-
-    if (!_directories.has(dirname)) {
-      console.log(`Scanning ${dirname}`);
-      const www = _path.dirname(nw.App.manifest.main.replace(/^file:\/\//, ''));
-      const files = _fs.readdirSync(_path.resolve(nw.App.startPath, www, dirname));
-      const fileMap = {};
-      for (const file of files) {
-        fileMap[file.toLowerCase()] = file;
-      }
-      _directories.set(dirname, fileMap);
-    }
-
-    const files = _directories.get(dirname);
-    const found = files[basename.toLowerCase()];
-    if (found) {
-      if (found != basename) {
-        console.log(`Transformed ${basename} to ${found}`);
-        return _path.join(dirname, found);
-      }
-    }
-    return path;
-  };
-
-  // pre-scan
-  transformPath('img/system/null');
-  transformPath('img/pictures/null');
-  transformPath('img/tilesets/null');
-  transformPath('img/characters/null');
-  transformPath('img/parallaxes/null');
-  transformPath('audio/bgm/null');
-  transformPath('audio/bgs/null');
-  transformPath('audio/me/null');
-  transformPath('audio/se/null');
-
-  // ================================================================
   // Decryption Worker - Threaded decryption
   // ================================================================
   const WorkerCode = () => {
@@ -1678,7 +1626,6 @@
 
   Decrypter.decryptImg = function (url, bitmap) {
     url = this.extToEncryptExt(url);
-    url = transformPath(url);
 
     QueueDecryptionWorker(0, new URL(url, location.href).href, $dataSystem.encryptionKey, data => {
       if (data.error) {
@@ -1723,7 +1670,6 @@
 
       if (!cachedAudio) {
         if (Decrypter.hasEncryptedAudio) url = Decrypter.extToEncryptExt(url);
-        url = transformPath(url);
 
         QueueDecryptionWorker(
           1,
