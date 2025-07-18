@@ -47,8 +47,7 @@
  * @param fakeframes
  * @text FAKEFRAMES™
  * @type boolean
- * @desc Enable FAKEFRAMES™ Interpolation - High refresh rate monitor support.
- * Please check the plugin source code to configure this feature.
+ * @desc Enable FAKEFRAMES™ Interpolation - High refresh rate monitor support. Please read help.
  * @default false
  *
  * @param fakeframes_toggle
