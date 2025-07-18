@@ -393,7 +393,10 @@
     Array.from(dataMapKeepAlive)
       .filter(([list, aliveUpdate]) => updateCount - aliveUpdate >= 5)
       .forEach(([list, aliveUpdate]) => {
-        compileCache.delete(list);
+        const compiledList = copyCache.get(list);
+        if (!compiledList) return;
+        copyCache.delete(list);
+        compileCache.delete(compiledList);
         dataMapKeepAlive.delete(list);
         deletedCache++;
       });
@@ -507,7 +510,7 @@
 
       const command = this._list[this._index];
       if (command) {
-        if (command.executable) {
+        if (command.__executable) {
           this._params = command.parameters;
           this._indent = command.indent;
           if (!NO_BIND_COMMANDS[command.code](this)) break;
@@ -532,6 +535,40 @@
 
   const compileCache = new Map();
   const dataMapKeepAlive = new Map();
+  const copyCache = new Map();
+
+  const setupCache = (interpreter, mode) => {
+    if (!interpreter) return false;
+
+    let list = interpreter._list;
+    if (!list) return false;
+
+    const compiledList = copyCache.get(list);
+    if (compiledList) {
+      // restore to compiled list if the list has compiled
+      list = compiledList;
+      interpreter._list = list;
+    }
+
+    const cache = compileCache.get(list);
+    if (cache != null) {
+      interpreter.__s = cache.scriptCache;
+      interpreter.__j = cache.jumpCache;
+      return true;
+    }
+
+    console.log('On the fly compiling, mode: ' + mode);
+    const compiled = compile(list);
+    storeCompiled(compiled);
+    interpreter.__s = compiled.scriptCache;
+    interpreter.__j = compiled.jumpCache;
+    return false;
+  };
+
+  const storeCompiled = compiled => {
+    compileCache.set(compiled.compiledList, compiled);
+    copyCache.set(compiled.originalList, compiled.compiledList);
+  };
 
   const findCorrespondingBracket = (script, index, openBracket, closeBracket) => {
     let depth = 1;
@@ -588,12 +625,20 @@
     }
   };
 
-  const compile = list => {
+  const compile = pendingList => {
     const scriptCache = [];
-    const jumpCache = Int32Array.from(list.map(() => -1));
+    const jumpCache = Int32Array.from(pendingList.map(() => -1));
 
     const branchIndent = [];
     const repeatIndent = [];
+
+    const list = pendingList.map(command => {
+      // nullify invalid commands
+      const copy = { ...command };
+      copy.__executable =
+        typeof Game_Interpreter.prototype[`command${command.code}`] === 'function';
+      return copy;
+    });
 
     // Record branch indent
     for (var i = 0; i < list.length; i++) {
@@ -689,22 +734,19 @@
         }
         jumpCache[index] = break_cur;
       }
-
-      // nullify invalid commands
-      command.executable =
-        typeof Game_Interpreter.prototype[`command${command.code}`] === 'function';
     }
 
     return {
       scriptCache,
       jumpCache,
+      compiledList: list,
+      originalList: pendingList,
     };
   };
 
   const preCompileEvents = list => {
     if (compileCache.get(list) != null) return;
-
-    compileCache.set(list, compile(list));
+    storeCompiled(compile(list));
   };
 
   const _DataManager_loadMapData = DataManager.loadMapData;
@@ -717,11 +759,14 @@
   DataManager.onLoad = function (object) {
     _DataManager_onLoad.apply(this, arguments);
 
+    let count = 0;
+
     if (object == $dataCommonEvents) {
       for (e of object) {
         const list = e && e.list;
         if (!list) continue;
         preCompileEvents(list);
+        count = count + 1;
       }
     }
 
@@ -733,48 +778,25 @@
           const list = page && page.list;
           if (!list) continue;
           preCompileEvents(list);
+          count = count + 1;
           dataMapKeepAlive.set(list, updateCount);
         }
       }
     }
+
+    if (count) console.log(`Precompiled ${count} scripts`);
   };
 
   const _Game_CommonEvent_update = Game_CommonEvent.prototype.update;
   Game_CommonEvent.prototype.update = function () {
-    const interpreterList = this._interpreter && this._interpreter._list;
-    if (interpreterList) {
-      const cache = compileCache.get(interpreterList);
-      if (cache != null) {
-        this._interpreter.__s = cache.scriptCache;
-        this._interpreter.__j = cache.jumpCache;
-      } else {
-        console.log('On the fly compiling during common event update');
-        const compiled = compile(interpreterList);
-        compileCache.set(interpreterList, compiled);
-        this._interpreter.__s = compiled.scriptCache;
-        this._interpreter.__j = compiled.jumpCache;
-      }
-    }
+    setupCache(this._interpreter, 'common event update');
     _Game_CommonEvent_update.apply(this, arguments);
   };
 
   // Keep event alive during update
   const _Game_Event_update = Game_Event.prototype.update;
   Game_Event.prototype.update = function () {
-    const interpreterList = this._interpreter && this._interpreter._list;
-    if (interpreterList) {
-      const cache = compileCache.get(interpreterList);
-      if (cache != null) {
-        this._interpreter.__s = cache.scriptCache;
-        this._interpreter.__j = cache.jumpCache;
-      } else {
-        console.log('On the fly compiling during event update');
-        const compiled = compile(interpreterList);
-        compileCache.set(interpreterList, compiled);
-        this._interpreter.__s = compiled.scriptCache;
-        this._interpreter.__j = compiled.jumpCache;
-      }
-    }
+    setupCache(this._interpreter, 'event update');
     _Game_Event_update.apply(this, arguments);
 
     if (
@@ -793,15 +815,7 @@
   const _Game_Event_refresh = Game_Event.prototype.refresh;
   Game_Event.prototype.refresh = function () {
     _Game_Event_refresh.apply(this, arguments);
-    const list = this._interpreter && this._interpreter._list;
-    if (list) {
-      if (compileCache.get(list) != null) return;
-      console.log('On the fly compiling non setup');
-      const compiled = compile(list);
-      compileCache.set(list, compiled);
-      this._interpreter.__s = compiled.scriptCache;
-      this._interpreter.__j = compiled.jumpCache;
-    }
+    setupCache(this._interpreter, 'event refresh');
   };
 
   const NO_BIND_COMMANDS = [];
@@ -925,14 +939,7 @@
   const _Game_Interpreter_setup = Game_Interpreter.prototype.setup;
   Game_Interpreter.prototype.setup = function (list) {
     _Game_Interpreter_setup.apply(this, arguments);
-    let compiled = compileCache.get(list);
-    if (!compiled) {
-      console.log('On the fly compiling with setup');
-      compiled = compile(list);
-      compileCache.set(list, compiled);
-    }
-    this.__s = compiled.scriptCache;
-    this.__j = compiled.jumpCache;
+    setupCache(this, 'interpreter setup');
   };
 
   // Faster branch
@@ -1952,6 +1959,17 @@
   const deleteInterpreterCache = interpreter => {
     delete interpreter.__s;
     delete interpreter.__j;
+    if (interpreter._list) {
+      const list = interpreter._list;
+
+      // restore original list
+      if (list) {
+        const compiled = compileCache.get(list);
+        if (compiled) {
+          interpreter._list = compiled.originalList;
+        }
+      }
+    }
     if (interpreter._childInterpreter) {
       deleteInterpreterCache(interpreter._childInterpreter);
     }
