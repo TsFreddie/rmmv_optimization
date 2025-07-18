@@ -1921,7 +1921,6 @@
   // ================================================================
   // Remove caches when saving
   // ================================================================
-  const _DataManager_makeSaveContents = DataManager.makeSaveContents;
   const deleteInterpreterCache = interpreter => {
     delete interpreter.__s;
     delete interpreter.__j;
@@ -1941,7 +1940,8 @@
     }
   };
 
-  DataManager.makeSaveContents = function () {
+  const _Game_System_onBeforeSave = Game_System.prototype.onBeforeSave;
+  Game_System.prototype.onBeforeSave = function () {
     if ($gameMap._interpreter) {
       deleteInterpreterCache($gameMap._interpreter);
     }
@@ -1961,8 +1961,7 @@
         }
       }
     }
-
-    return _DataManager_makeSaveContents.call(this);
+    return _Game_System_onBeforeSave.call(this);
   };
 })();
 
