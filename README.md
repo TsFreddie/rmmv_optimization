@@ -38,8 +38,8 @@ For Polidog Patrol:
 
 ```js
 $plugins.push(
-  { name: 'BruteForceOptimization', status: true, description: '', parameters: {} },
-  { name: 'BruteForceOptimizationPolidog', status: true, description: '', parameters: {} }
+  { name: "BruteForceOptimization", status: true, description: "", parameters: {"fakeframes": "true"} },
+  { name: "BruteForceOptimizationPolidog", status: true, description: "", parameters: {} }
 );
 ```
 
@@ -47,8 +47,8 @@ For Benki Wars:
 
 ```js
 $plugins.push(
-  { name: 'BruteForceOptimization', status: true, description: '', parameters: {} },
-  { name: 'BruteForceOptimizationBenki', status: true, description: '', parameters: {} }
+  { name: "BruteForceOptimization", status: true, description: "", parameters: {"fakeframes": "true"} },
+  { name: "BruteForceOptimizationBenki", status: true, description: "", parameters: {} }
 );
 ```
 
