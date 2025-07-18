@@ -1172,6 +1172,13 @@
     }
   };
 
+  const _Game_Screen_initialize = Game_Screen.prototype.initialize;
+  Game_Screen.prototype.initialize = function () {
+    _Game_Screen_initialize.apply(this, arguments);
+    RemovingPictures.clear();
+    ActivePictures.clear();
+  };
+
   const _Game_Screen_showPicture = Game_Screen.prototype.showPicture;
   Game_Screen.prototype.showPicture = function (pictureId) {
     _Game_Screen_showPicture.apply(this, arguments);
@@ -1207,19 +1214,22 @@
     ActivePictures.clear();
   };
 
+  let lastGameScreenInstance = null;
+
   Game_Screen.prototype.updatePictures = function () {
+    if (lastGameScreenInstance !== this) {
+      lastGameScreenInstance = this;
+      RemovingPictures.clear();
+      ActivePictures.clear();
+      for (let i = 0; i < this._pictures.length; i++) {
+        if (this._pictures[i]) {
+          ActivePictures.add(i - 1);
+        }
+      }
+    }
+
     for (const id of ActivePictures) {
       this._pictures[id + 1].update();
-    }
-  };
-
-  Game_Map.prototype.updateEvents = function () {
-    for (const event of this._events) {
-      if (event) event.update();
-    }
-
-    for (const event of this._commonEvents) {
-      event.update();
     }
   };
 
@@ -1257,6 +1267,16 @@
     this.updateTilemap();
     this.updateShadow();
     this.updateWeather();
+  };
+
+  Game_Map.prototype.updateEvents = function () {
+    for (const event of this._events) {
+      if (event) event.update();
+    }
+
+    for (const event of this._commonEvents) {
+      event.update();
+    }
   };
 
   Sprite.prototype.update = function () {
