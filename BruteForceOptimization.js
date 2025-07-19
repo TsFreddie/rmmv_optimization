@@ -484,6 +484,7 @@
   // Interpreter optimization
   // Game_Interpreter path is VERY HOT, avoid calls at all cost
   Game_Interpreter.prototype.update = function () {
+    setupCache(this, 'interpreter update');
     let count = 0;
     while (this._list) {
       if (this._childInterpreter) {
@@ -787,16 +788,9 @@
     if (count) console.log(`Precompiled ${count} scripts`);
   };
 
-  const _Game_CommonEvent_update = Game_CommonEvent.prototype.update;
-  Game_CommonEvent.prototype.update = function () {
-    setupCache(this._interpreter, 'common event update');
-    _Game_CommonEvent_update.apply(this, arguments);
-  };
-
   // Keep event alive during update
   const _Game_Event_update = Game_Event.prototype.update;
   Game_Event.prototype.update = function () {
-    setupCache(this._interpreter, 'event update');
     _Game_Event_update.apply(this, arguments);
 
     if (
@@ -809,13 +803,6 @@
         dataMapKeepAlive.set(list, updateCount);
       }
     }
-  };
-
-  // Make sure we recompile events when loading from a save file
-  const _Game_Event_refresh = Game_Event.prototype.refresh;
-  Game_Event.prototype.refresh = function () {
-    _Game_Event_refresh.apply(this, arguments);
-    setupCache(this._interpreter, 'event refresh');
   };
 
   const NO_BIND_COMMANDS = [];
@@ -934,13 +921,6 @@
     NO_BIND_COMMANDS[102] = c => c.command102();
     NO_BIND_COMMANDS[101] = c => c.command101();
   }
-
-  // Cache list setup
-  const _Game_Interpreter_setup = Game_Interpreter.prototype.setup;
-  Game_Interpreter.prototype.setup = function (list) {
-    _Game_Interpreter_setup.apply(this, arguments);
-    setupCache(this, 'interpreter setup');
-  };
 
   // Faster branch
   const _Game_Interpreter_initialize = Game_Interpreter.prototype.initialize;
