@@ -6,12 +6,17 @@
 (function () {
   'use strict';
 
-  const indexOverride = [];
-  let _sortDirty = false;
+  let _sortedState = false;
 
   const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
     _Game_Interpreter_pluginCommand.call(this, command, args);
+
+    if (!$gameScreen._pictureIndexOverride) {
+      $gameScreen._pictureIndexOverride = {};
+    }
+
+    const indexOverride = $gameScreen._pictureIndexOverride;
 
     if (command.toLowerCase() == 'picturezindex') {
       args = args.map(arg => {
@@ -21,30 +26,38 @@
       });
 
       if (args[0] !== 'reset') {
-        if (typeof args[1] === 'string') {
-          indexOverride[args[0]] = parseInt(args[1]);
-        } else {
-          indexOverride[args[0]] = args[1];
+        const id = args[0];
+        let value = args[1];
+        if (typeof value === 'string') {
+          value = parseInt(value);
         }
-        _sortDirty = true;
+        if (id == value) {
+          delete indexOverride[id];
+        } else {
+          indexOverride[id] = value;
+        }
+        _sortedState = false;
       } else {
         indexOverride.length = 0;
-        _sortDirty = true;
+        _sortedState = false;
       }
     }
   };
 
   const _SceneManager_renderScene = SceneManager.renderScene;
   SceneManager.renderScene = function () {
-    if (_sortDirty) {
-      _sortDirty = false;
+    const indexOverride = $gameScreen && $gameScreen._pictureIndexOverride;
+
+    if (_sortedState !== indexOverride) {
+      _sortedState = indexOverride;
+
       const spriteset = SceneManager._scene._spriteset;
       let children;
       if (spriteset && spriteset._pictureContainer) {
         children = spriteset._pictureContainer.children;
       }
 
-      if (indexOverride.length == 0) {
+      if (!indexOverride || indexOverride.length == 0) {
         if (children) {
           children.sort((a, b) => {
             return a._pictureId - b._pictureId;
