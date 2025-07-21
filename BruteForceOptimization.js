@@ -4,7 +4,7 @@
  *
  * @help This plugin provides the following optimizations
  *
- * Version 1.0.0
+ * Version 1.0.1
  *
  * Features:
  *
@@ -31,8 +31,11 @@
  *    - See: Bitmap Tags
  *
  * 3. Picture optimizations
- *    - Allows you to use `$gameScreen.showPicture` to assign
- *    - very high picture IDs without tanking performance.
+ *    - Allows you to use other plugins to override max picture limit
+ *    - without major performance loss.
+ *
+ *    - Reuse all the pictures when loading new scenes. When max
+ *    - picture limit is high, this can reduce scene load time.
  *
  * 4. Interpreter optimizations
  *    - Speed up the script execution speed by up to 20x.
@@ -1213,14 +1216,45 @@
     }
   };
 
-  const _Spriteset_Base_createPictures = Spriteset_Base.prototype.createPictures;
+  // reuse pictures to make loading a lot faster when loading scenes
+  let __cachedPictureContainer = null;
   Spriteset_Base.prototype.createPictures = function () {
-    _Spriteset_Base_createPictures.apply(this, arguments);
+    if (__cachedPictureContainer) {
+      this._pictureContainer = __cachedPictureContainer.container;
+      this.__unsortedPictures = __cachedPictureContainer.pictures;
+      this.addChild(this._pictureContainer);
+
+      for (const id of ActivePictures) {
+        // move all active pictures to removing so they are update at least once
+        RemovingPictures.add(id);
+      }
+      ActivePictures.clear();
+      return;
+    }
+
+    var width = Graphics.boxWidth;
+    var height = Graphics.boxHeight;
+    var x = (Graphics.width - width) / 2;
+    var y = (Graphics.height - height) / 2;
+
+    this._pictureContainer = new Sprite();
+    this._pictureContainer.setFrame(x, y, width, height);
+
+    for (var i = 1; i <= $gameScreen.maxPictures(); i++) {
+      this._pictureContainer.addChild(new Sprite_Picture(i));
+    }
+
+    this.addChild(this._pictureContainer);
+
     this.__unsortedPictures = [];
     for (const picture of this._pictureContainer.children) {
       this.__unsortedPictures.push(picture);
     }
-    this.__unsortedPictures.sort((a, b) => a._pictureId - b._pictureId);
+
+    __cachedPictureContainer = {
+      container: this._pictureContainer,
+      pictures: this.__unsortedPictures,
+    };
   };
 
   Spriteset_Map.prototype.update = function () {
