@@ -1140,28 +1140,6 @@
   // ================================================================
   // Faster iteration & Picture Management
   // ================================================================
-  const _DataManager_extractSaveContents = DataManager.extractSaveContents;
-  DataManager.extractSaveContents = function () {
-    _DataManager_extractSaveContents.apply(this, arguments);
-    for (let i = 0; i < $gameScreen._pictures.length; i++) {
-      if ($gameScreen._pictures[i]) {
-        RemovingPictures.delete(i - 1);
-        ActivePictures.add(i - 1);
-      } else {
-        if (ActivePictures.delete(i - 1)) {
-          RemovingPictures.add(i - 1);
-        }
-      }
-    }
-  };
-
-  const _Game_Screen_initialize = Game_Screen.prototype.initialize;
-  Game_Screen.prototype.initialize = function () {
-    _Game_Screen_initialize.apply(this, arguments);
-    RemovingPictures.clear();
-    ActivePictures.clear();
-  };
-
   const _Game_Screen_showPicture = Game_Screen.prototype.showPicture;
   Game_Screen.prototype.showPicture = function (pictureId) {
     _Game_Screen_showPicture.apply(this, arguments);
