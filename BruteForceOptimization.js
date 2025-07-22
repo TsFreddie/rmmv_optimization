@@ -4,7 +4,7 @@
  *
  * @help This plugin provides the following optimizations
  *
- * Version 1.0.1
+ * Version 1.0.2
  *
  * Features:
  *
@@ -566,6 +566,7 @@
     storeCompiled(compiled);
     interpreter.__s = compiled.scriptCache;
     interpreter.__j = compiled.jumpCache;
+    interpreter._list = compiled.compiledList;
     return false;
   };
 
@@ -1954,6 +1955,18 @@
       }
     }
     return _Game_System_onBeforeSave.call(this);
+  };
+
+  const _Input_update = Input.update;
+  Input.update = function () {
+    _Input_update.call(this);
+    console.log(
+      JSON.stringify(
+        Object.entries(this._currentState)
+          .filter(e => e[1])
+          .map(e => e[0])
+      )
+    );
   };
 })();
 
