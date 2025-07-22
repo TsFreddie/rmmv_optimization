@@ -392,21 +392,6 @@
     this.changeScene();
     this.updateScene();
 
-    let deletedCache = 0;
-    Array.from(dataMapKeepAlive)
-      .filter(([list, aliveUpdate]) => updateCount - aliveUpdate >= 5)
-      .forEach(([list, aliveUpdate]) => {
-        const compiledList = copyCache.get(list);
-        if (!compiledList) return;
-        copyCache.delete(list);
-        compileCache.delete(compiledList);
-        dataMapKeepAlive.delete(list);
-        deletedCache++;
-      });
-    if (deletedCache > 0) {
-      console.log(`Disposed ${deletedCache} cached scripts`);
-    }
-
     // Expire audio cache that is not used for 1 minute
     let deletedAudioCache = 0;
     Array.from(audioCache)
@@ -538,8 +523,8 @@
   // ================================================================
 
   const compileCache = new Map();
-  const dataMapKeepAlive = new Map();
   const copyCache = new Map();
+  const mapEvents = new Set();
 
   const setupCache = (interpreter, mode) => {
     if (!interpreter) return false;
@@ -554,25 +539,36 @@
       interpreter._list = list;
     }
 
-    const cache = compileCache.get(list);
-    if (cache != null) {
-      interpreter.__s = cache.scriptCache;
-      interpreter.__j = cache.jumpCache;
+    const { hit, compiled } = compileEvents(list);
+    if (hit) {
+      // cache hit, the event is already compiled
+      interpreter.__s = compiled.scriptCache;
+      interpreter.__j = compiled.jumpCache;
       return true;
     }
 
+    // add otf compiled events to mapEvents so they get released when map changes
     console.log('On the fly compiling, mode: ' + mode);
-    const compiled = compile(list);
-    storeCompiled(compiled);
+    mapEvents.add(list);
     interpreter.__s = compiled.scriptCache;
     interpreter.__j = compiled.jumpCache;
     interpreter._list = compiled.compiledList;
     return false;
   };
 
-  const storeCompiled = compiled => {
-    compileCache.set(compiled.compiledList, compiled);
-    copyCache.set(compiled.originalList, compiled.compiledList);
+  const releaseMapEvents = () => {
+    let deleteCount = 0;
+    for (const list of mapEvents) {
+      const compiledList = copyCache.get(list);
+      if (!compiledList) return;
+      copyCache.delete(list);
+      compileCache.delete(compiledList);
+      deleteCount++;
+    }
+    if (deleteCount > 0) {
+      console.log(`Disposed ${deleteCount} cached scripts. Cache size: ${compileCache.size}`);
+    }
+    mapEvents.clear();
   };
 
   const findCorrespondingBracket = (script, index, openBracket, closeBracket) => {
@@ -749,9 +745,14 @@
     };
   };
 
-  const preCompileEvents = list => {
-    if (compileCache.get(list) != null) return;
-    storeCompiled(compile(list));
+  const compileEvents = list => {
+    const cache = compileCache.get(list);
+    if (cache != null) return { hit: true, compiled: cache };
+
+    const compiled = compile(list);
+    compileCache.set(compiled.compiledList, compiled);
+    copyCache.set(compiled.originalList, compiled.compiledList);
+    return { hit: false, compiled };
   };
 
   const _DataManager_loadMapData = DataManager.loadMapData;
@@ -770,43 +771,30 @@
       for (e of object) {
         const list = e && e.list;
         if (!list) continue;
-        preCompileEvents(list);
-        count = count + 1;
+        if (!compileEvents(list).hit) {
+          count = count + 1;
+        }
       }
     }
 
     if (object == $dataMap) {
+      releaseMapEvents();
+
       for (e of object.events || []) {
         const pages = (e && e.pages) || [];
         for (let p = 0; p < pages.length; p++) {
           const page = pages[p];
           const list = page && page.list;
           if (!list) continue;
-          preCompileEvents(list);
-          count = count + 1;
-          dataMapKeepAlive.set(list, updateCount);
+          if (!compileEvents(list).hit) {
+            mapEvents.add(list);
+            count = count + 1;
+          }
         }
       }
     }
 
     if (count) console.log(`Precompiled ${count} scripts`);
-  };
-
-  // Keep event alive during update
-  const _Game_Event_update = Game_Event.prototype.update;
-  Game_Event.prototype.update = function () {
-    _Game_Event_update.apply(this, arguments);
-
-    if (
-      $dataMap.events[this._eventId] &&
-      $dataMap.events[this._eventId].pages &&
-      $dataMap.events[this._eventId].pages[this._pageIndex]
-    ) {
-      const list = $dataMap.events[this._eventId].pages[this._pageIndex].list;
-      if (list) {
-        dataMapKeepAlive.set(list, updateCount);
-      }
-    }
   };
 
   const NO_BIND_COMMANDS = [];
