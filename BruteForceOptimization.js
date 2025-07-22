@@ -434,7 +434,7 @@
     }
 
     let lagCounter = 0;
-    const isHfr = detectedRefreshRate > hfrModeThreshold;
+    const isHfr = detectedRefreshRate > hfrModeThreshold || this.gameInterval < 16;
     let updated = false;
 
     while (this.gameInterval - frameTime < 0.001) {
