@@ -4,7 +4,7 @@
  *
  * @help This plugin provides the following optimizations
  *
- * Version 1.0.2
+ * Version 1.0.3
  *
  * Features:
  *
@@ -265,6 +265,8 @@
     _Bitmap_onLoad.apply(this, arguments);
   };
 
+  const PI2 = Math.PI * 2;
+
   Sprite.prototype._interpStep = function () {
     this._ilpx = this._ipx;
     this._ilpy = this._ipy;
@@ -282,7 +284,12 @@
     this._idpy = this._ipy - this._ilpy;
     this._idsx = this._isx - this._ilsx;
     this._idsy = this._isy - this._ilsy;
-    this._idr = this._ir - this._ilr;
+    this._idr = (this._ir - this._ilr) % PI2;
+    if (this._idr > Math.PI) {
+      this._idr -= PI2;
+    } else if (this._idr < -Math.PI) {
+      this._idr += PI2;
+    }
 
     const interpId = (this.bitmap && this.bitmap.__interpId) || undefined;
 
@@ -407,6 +414,10 @@
     updateCount++;
   };
 
+  SceneManager._restoreSceneCollection = restoreSceneCollection;
+  SceneManager._stepSceneCollection = stepSceneCollection;
+  SceneManager._updateSceneCollection = updateSceneCollection;
+
   SceneManager.updateOptimized = function () {
     this.requestUpdate();
 
@@ -434,7 +445,7 @@
     }
 
     let lagCounter = 0;
-    const isHfr = detectedRefreshRate > hfrModeThreshold || this.gameInterval < 16;
+    const isHfr = $gameSystem && $gameSystem.isFakeFramesOn();
     let updated = false;
 
     while (this.gameInterval - frameTime < 0.001) {
