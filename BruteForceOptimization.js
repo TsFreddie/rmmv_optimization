@@ -4,7 +4,7 @@
  *
  * @help This plugin provides the following optimizations
  *
- * Version 1.0.3
+ * Version 1.0.4
  *
  * Features:
  *
@@ -228,8 +228,6 @@
   };
 
   const updateSceneCollection = () => {
-    if (!$gameSystem || !$gameSystem.isFakeFramesOn()) return;
-
     const spriteset = SceneManager._scene && SceneManager._scene._spriteset;
     if (spriteset) {
       spriteset._interpUpdate();
@@ -414,10 +412,6 @@
     updateCount++;
   };
 
-  SceneManager._restoreSceneCollection = restoreSceneCollection;
-  SceneManager._stepSceneCollection = stepSceneCollection;
-  SceneManager._updateSceneCollection = updateSceneCollection;
-
   SceneManager.updateOptimized = function () {
     this.requestUpdate();
 
@@ -445,7 +439,11 @@
     }
 
     let lagCounter = 0;
-    const isHfr = $gameSystem && $gameSystem.isFakeFramesOn();
+    const isHfr =
+      $gameSystem &&
+      $gameSystem.isFakeFramesOn() &&
+      (detectedRefreshRate > hfrModeThreshold || this.gameInterval < 16 || this.gameInterval > 17);
+
     let updated = false;
 
     while (this.gameInterval - frameTime < 0.001) {
@@ -1954,18 +1952,6 @@
       }
     }
     return _Game_System_onBeforeSave.call(this);
-  };
-
-  const _Input_update = Input.update;
-  Input.update = function () {
-    _Input_update.call(this);
-    console.log(
-      JSON.stringify(
-        Object.entries(this._currentState)
-          .filter(e => e[1])
-          .map(e => e[0])
-      )
-    );
   };
 })();
 
