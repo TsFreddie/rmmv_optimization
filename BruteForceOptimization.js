@@ -1166,25 +1166,31 @@
     }
   };
 
+  let lastPictureInstance = null;
+
   const _Game_Screen_clearPictures = Game_Screen.prototype.clearPictures;
   Game_Screen.prototype.clearPictures = function () {
     _Game_Screen_clearPictures.apply(this, arguments);
+
     for (const pictureId of ActivePictures) {
       RemovingPictures.add(pictureId);
     }
     ActivePictures.clear();
+    lastPictureInstance = this._pictures;
   };
 
-  let lastGameScreenInstance = null;
-
   Game_Screen.prototype.updatePictures = function () {
-    if (lastGameScreenInstance !== this) {
-      lastGameScreenInstance = this;
-      RemovingPictures.clear();
-      ActivePictures.clear();
-      for (let i = 0; i < this._pictures.length; i++) {
+    if (lastPictureInstance !== this._pictures) {
+      lastPictureInstance = this._pictures;
+
+      for (let i = 1; i <= this.maxPictures(); i++) {
+        const index = i - 1;
         if (this._pictures[i]) {
-          ActivePictures.add(i - 1);
+          RemovingPictures.delete(index);
+          ActivePictures.add(index);
+        } else if (ActivePictures.has(index)) {
+          RemovingPictures.add(index);
+          ActivePictures.delete(index);
         }
       }
     }
@@ -1201,12 +1207,6 @@
       this._pictureContainer = __cachedPictureContainer.container;
       this.__unsortedPictures = __cachedPictureContainer.pictures;
       this.addChild(this._pictureContainer);
-
-      for (const id of ActivePictures) {
-        // move all active pictures to removing so they are update at least once
-        RemovingPictures.add(id);
-      }
-      ActivePictures.clear();
       return;
     }
 
