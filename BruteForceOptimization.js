@@ -1431,14 +1431,16 @@
 
   // Some plugin calls eval in this, which can be very slow.
   const _Window_Message_isFastForward = Window_Message.prototype.isFastForward;
-  let _Window_Message_isFastForward_Value = null;
-  Window_Message.prototype.isFastForward = function () {
-    if (_Window_Message_isFastForward_Value !== null) {
+  if (_Window_Message_isFastForward) {
+    let _Window_Message_isFastForward_Value = null;
+    Window_Message.prototype.isFastForward = function () {
+      if (_Window_Message_isFastForward_Value !== null) {
+        return _Window_Message_isFastForward_Value;
+      }
+      _Window_Message_isFastForward_Value = _Window_Message_isFastForward.call(this);
       return _Window_Message_isFastForward_Value;
-    }
-    _Window_Message_isFastForward_Value = _Window_Message_isFastForward.call(this);
-    return _Window_Message_isFastForward_Value;
-  };
+    };
+  }
 
   // ================================================================
   // Fix window refresh
