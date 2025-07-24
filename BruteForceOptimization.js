@@ -481,7 +481,7 @@
   // Interpreter optimization
   // Game_Interpreter path is VERY HOT, avoid calls at all cost
   Game_Interpreter.prototype.update = function () {
-    setupCache(this, 'interpreter update');
+    setupCache(this);
     let count = 0;
     while (this._list) {
       if (this._childInterpreter) {
@@ -533,13 +533,21 @@
 
   const compileCache = new Map();
   const copyCache = new Map();
+  const keyCache = new Map();
   const mapEvents = new Set();
 
-  const setupCache = (interpreter, mode) => {
+  const setupCache = interpreter => {
     if (!interpreter) return false;
 
     let list = interpreter._list;
     if (!list) return false;
+    if (list === true && interpreter._eventKey) {
+      const keyedList = keyCache.get(interpreter._eventKey);
+      if (keyedList) {
+        list = keyedList;
+        interpreter._list = list;
+      }
+    }
 
     const compiledList = copyCache.get(list);
     if (compiledList) {
@@ -553,11 +561,12 @@
       // cache hit, the event is already compiled
       interpreter.__s = compiled.scriptCache;
       interpreter.__j = compiled.jumpCache;
+      interpreter._eventKey = compiled.precompileKey;
       return true;
     }
 
     // add otf compiled events to mapEvents so they get released when map changes
-    console.log('On the fly compiling, mode: ' + mode);
+    console.log('On the fly compiling triggered');
     mapEvents.add(list);
     interpreter.__s = compiled.scriptCache;
     interpreter.__j = compiled.jumpCache;
@@ -570,6 +579,7 @@
     for (const list of mapEvents) {
       const compiledList = copyCache.get(list);
       if (!compiledList) return;
+      keyCache.delete(compiledList.precompileKey);
       copyCache.delete(list);
       compileCache.delete(compiledList);
       deleteCount++;
@@ -635,7 +645,7 @@
     }
   };
 
-  const compile = pendingList => {
+  const compile = (pendingList, precompileKey) => {
     const scriptCache = [];
     const jumpCache = Int32Array.from(pendingList.map(() => -1));
 
@@ -751,16 +761,20 @@
       jumpCache,
       compiledList: list,
       originalList: pendingList,
+      precompileKey,
     };
   };
 
-  const compileEvents = list => {
+  const compileEvents = (list, precompileKey = null) => {
     const cache = compileCache.get(list);
     if (cache != null) return { hit: true, compiled: cache };
 
-    const compiled = compile(list);
+    const compiled = compile(list, precompileKey);
     compileCache.set(compiled.compiledList, compiled);
     copyCache.set(compiled.originalList, compiled.compiledList);
+    if (precompileKey) {
+      keyCache.set(precompileKey, compiled.compiledList);
+    }
     return { hit: false, compiled };
   };
 
@@ -777,33 +791,45 @@
     let count = 0;
 
     if (object == $dataCommonEvents) {
-      for (e of object) {
-        const list = e && e.list;
+      for (let i = 0; i < object.length; i++) {
+        const list = object[i] && object[i].list;
         if (!list) continue;
-        if (!compileEvents(list).hit) {
-          count = count + 1;
+        const key = `c${i}`;
+
+        const precompile = compileEvents(list, key);
+        if (precompile.hit) {
+          console.warn('A common event is already compiled. This is not supposed to happen.');
         }
+        count = count + 1;
       }
     }
 
     if (object == $dataMap) {
       releaseMapEvents();
 
-      for (e of object.events || []) {
-        const pages = (e && e.pages) || [];
-        for (let p = 0; p < pages.length; p++) {
-          const page = pages[p];
-          const list = page && page.list;
-          if (!list) continue;
-          if (!compileEvents(list).hit) {
-            mapEvents.add(list);
+      if (object.events) {
+        for (let i = 0; i < object.events.length; i++) {
+          const event = object.events[i];
+          if (!event) continue;
+          const pages = event.pages;
+          if (!pages) continue;
+
+          for (let p = 0; p < pages.length; p++) {
+            const page = pages[p];
+            const list = page && page.list;
+            if (!list) continue;
+            const key = `m${i}p${p}`;
+            const precompile = compileEvents(list, key);
+            if (precompile.hit) {
+              console.warn('A map event is already compiled. This is not supposed to happen.');
+            }
             count = count + 1;
           }
         }
       }
     }
 
-    if (count) console.log(`Precompiled ${count} scripts`);
+    if (count) console.log(`Precompiled ${count} event scripts`);
   };
 
   const NO_BIND_COMMANDS = [];
