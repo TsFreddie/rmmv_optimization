@@ -1204,7 +1204,7 @@
     lastPictureInstance = this._pictures;
   };
 
-  Game_Screen.prototype.updatePictures = function () {
+  Game_Screen.prototype._checkPictures = function () {
     if (lastPictureInstance !== this._pictures) {
       lastPictureInstance = this._pictures;
 
@@ -1219,7 +1219,10 @@
         }
       }
     }
+  };
 
+  Game_Screen.prototype.updatePictures = function () {
+    this._checkPictures();
     for (const id of ActivePictures) {
       this._pictures[id + 1].update();
     }
