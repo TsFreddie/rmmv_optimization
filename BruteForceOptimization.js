@@ -820,6 +820,7 @@
             if (!list) continue;
             const key = `m${i}p${p}`;
             const precompile = compileEvents(list, key);
+            mapEvents.add(list);
             if (precompile.hit) {
               console.warn('A map event is already compiled. This is not supposed to happen.');
             }
