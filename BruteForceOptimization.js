@@ -4,7 +4,7 @@
  *
  * @help This plugin provides the following optimizations
  *
- * Version 1.0.4
+ * Version 1.0.5
  *
  * Features:
  *
@@ -1419,6 +1419,7 @@
   // ================================================================
   // Cache some hot path
   // ================================================================
+  // Some plugin calls this a lot.
   const _Utils_isMobileDevice = Utils.isMobileDevice;
   let isMobileDevice = null;
   Utils.isMobileDevice = function () {
@@ -1427,6 +1428,69 @@
     }
     return isMobileDevice;
   };
+
+  // Some plugin calls eval in this, which can be very slow.
+  const _Window_Message_isFastForward = Window_Message.prototype.isFastForward;
+  let _Window_Message_isFastForward_Value = null;
+  Window_Message.prototype.isFastForward = function () {
+    if (_Window_Message_isFastForward_Value !== null) {
+      return _Window_Message_isFastForward_Value;
+    }
+    _Window_Message_isFastForward_Value = _Window_Message_isFastForward.call(this);
+    return _Window_Message_isFastForward_Value;
+  };
+
+  // ================================================================
+  // Fix window refresh
+  // Resetting to default value when they are already default
+  //   also triggers this._refreshAllParts()
+  // Technically they also calls this multiple times when
+  //   the window initialize, but it only happens when loading
+  // ================================================================
+  Object.defineProperty(Window.prototype, 'width', {
+    get: function () {
+      return this._width;
+    },
+    set: function (value) {
+      if (this._width === value) return;
+      this._width = value;
+      this._refreshAllParts();
+    },
+    configurable: true,
+  });
+  Object.defineProperty(Window.prototype, 'height', {
+    get: function () {
+      return this._height;
+    },
+    set: function (value) {
+      if (this._width === value) return;
+      this._height = value;
+      this._refreshAllParts();
+    },
+    configurable: true,
+  });
+  Object.defineProperty(Window.prototype, 'padding', {
+    get: function () {
+      return this._padding;
+    },
+    set: function (value) {
+      if (this._width === value) return;
+      this._padding = value;
+      this._refreshAllParts();
+    },
+    configurable: true,
+  });
+  Object.defineProperty(Window.prototype, 'margin', {
+    get: function () {
+      return this._margin;
+    },
+    set: function (value) {
+      if (this._width === value) return;
+      this._margin = value;
+      this._refreshAllParts();
+    },
+    configurable: true,
+  });
 
   // ================================================================
   // Decryption Worker - Threaded decryption
@@ -1979,6 +2043,39 @@
       }
     }
     return _Game_System_onBeforeSave.call(this);
+  };
+
+  // ================================================================
+  // Draw Text Fix
+  // `context.textAlign = undefined;` spams the console with warning
+  // and in NW.js this warning seems to cost performance
+  // ================================================================
+  Bitmap.prototype.drawText = function (text, x, y, maxWidth, lineHeight, align) {
+    if (text !== undefined) {
+      var tx = x;
+      var ty = y + lineHeight - (lineHeight - this.fontSize * 0.7) / 2;
+      var context = this._context;
+      var alpha = context.globalAlpha;
+      maxWidth = maxWidth || 0xffffffff;
+      if (align === 'center') {
+        tx += maxWidth / 2;
+      }
+      if (align === 'right') {
+        tx += maxWidth;
+      }
+      context.save();
+      context.font = this._makeFontNameText();
+      if (align !== undefined) {
+        context.textAlign = align;
+      }
+      context.textBaseline = 'alphabetic';
+      context.globalAlpha = 1;
+      this._drawTextOutline(text, tx, ty, maxWidth);
+      context.globalAlpha = alpha;
+      this._drawTextBody(text, tx, ty, maxWidth);
+      context.restore();
+      this._setDirty();
+    }
   };
 })();
 
