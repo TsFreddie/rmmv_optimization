@@ -1468,7 +1468,7 @@
       return this._height;
     },
     set: function (value) {
-      if (this._width === value) return;
+      if (this._height === value) return;
       this._height = value;
       this._refreshAllParts();
     },
@@ -1479,7 +1479,7 @@
       return this._padding;
     },
     set: function (value) {
-      if (this._width === value) return;
+      if (this._padding === value) return;
       this._padding = value;
       this._refreshAllParts();
     },
@@ -1490,7 +1490,7 @@
       return this._margin;
     },
     set: function (value) {
-      if (this._width === value) return;
+      if (this._margin === value) return;
       this._margin = value;
       this._refreshAllParts();
     },
