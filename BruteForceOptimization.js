@@ -74,6 +74,11 @@
    *  this.__cacheTint : Cache tint textures, optimize flickering sprites.
    *     - Please make sure the tint switches between only a few colors.
    *     - Smooth tinting or random tinting will create one texture for each color, which is not recommended.
+   *  this.__teleportThreshold : Custom teleport threshold for this image.
+   *     - By default this is 100px per frame, meaning if a image moves more than 100px in one frame, it will not be interpolated.
+   *     - You can manually set this value to a lower value to enable interpolation for sprites that moves fast.
+   *     - Note that the check is threshold in x and y value changes, so diagonal movement is sqrt(2) times faster.
+   *     - You can set it to 0 to make it never interpolate or Infinity to always interpolate.
    */
 
   if (!Bitmap.prototype._customImageTag) {
@@ -290,14 +295,15 @@
     }
 
     const interpId = (this.bitmap && this.bitmap.__interpId) || undefined;
+    const threshold = (this.bitmap && this.bitmap.__teleportThreshold) || INTERP_TELEPORT_THRESHOLD;
 
     if (
       !this.bitmap || // no bitmap
       this.bitmap.__noInterp || // bitmap with no interp tag should not be interpolated
       this._ildti != this.dTextInfo || // make sure text changes are not interpolated
       this._iliid != interpId || // if interp id changed, jump to current position immediately
-      Math.abs(this._idpx) > INTERP_TELEPORT_THRESHOLD ||
-      Math.abs(this._idpy) > INTERP_TELEPORT_THRESHOLD ||
+      Math.abs(this._idpx) > threshold ||
+      Math.abs(this._idpy) > threshold ||
       Math.abs(this._isx) <= 0.005 ||
       Math.abs(this._isy) <= 0.005 ||
       Math.sign(this._isx) !== Math.sign(this._ilsx) ||
