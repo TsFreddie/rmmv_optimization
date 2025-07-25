@@ -52,8 +52,6 @@ $plugins.push(
 );
 ```
 
-Note: If the game has an auto framerate mode, please disable it and set the frame rate to 60fps, otherwise the game may be confused and drop frames even with the optimization.
-
 ## Other RPG Maker MV Games
 
 The `BruteForceOptimization.js` plugin is setup to be a generic RPG Maker MV plugin, however, I have not tested it on any other games. If you are interested in using it for your own game, I recommend reading the plugin source code to understand what it does.
