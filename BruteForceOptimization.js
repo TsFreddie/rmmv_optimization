@@ -2052,36 +2052,16 @@
   };
 
   // ================================================================
-  // Draw Text Fix
-  // `context.textAlign = undefined;` spams the console with warning
-  // and in NW.js this warning seems to cost performance
+  // Warning fixes
+  // in NW.js these warnings seem to cost performance for
+  // some reason
   // ================================================================
+
+  // Suppress `context.textAlign = undefined;` warnings
+  const _Bitmap_drawText = Bitmap.prototype.drawText;
   Bitmap.prototype.drawText = function (text, x, y, maxWidth, lineHeight, align) {
-    if (text !== undefined) {
-      var tx = x;
-      var ty = y + lineHeight - (lineHeight - this.fontSize * 0.7) / 2;
-      var context = this._context;
-      var alpha = context.globalAlpha;
-      maxWidth = maxWidth || 0xffffffff;
-      if (align === 'center') {
-        tx += maxWidth / 2;
-      }
-      if (align === 'right') {
-        tx += maxWidth;
-      }
-      context.save();
-      context.font = this._makeFontNameText();
-      if (align !== undefined) {
-        context.textAlign = align;
-      }
-      context.textBaseline = 'alphabetic';
-      context.globalAlpha = 1;
-      this._drawTextOutline(text, tx, ty, maxWidth);
-      context.globalAlpha = alpha;
-      this._drawTextBody(text, tx, ty, maxWidth);
-      context.restore();
-      this._setDirty();
-    }
+    if (align === undefined) align = 'start';
+    return _Bitmap_drawText.call(this, text, x, y, maxWidth, lineHeight, align);
   };
 })();
 
