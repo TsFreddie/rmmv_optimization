@@ -586,6 +586,7 @@
     }
     if (deleteCount > 0) {
       console.log(`Disposed ${deleteCount} cached scripts. Cache size: ${compileCache.size}`);
+      if (window.gc) window.gc();
     }
     mapEvents.clear();
   };
