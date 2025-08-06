@@ -78,6 +78,6 @@ The following is a brief summary of the optimization techniques used in this rep
   - Sorted pictures before each render if marked dirty
   - Removed heavy and redundant sorting multiple times per frame
 - Implemented a custom FAKEFRAMES™ (picture interpolation) framework to support high refresh rate monitors
-  - FAKEFRAMES™ is not a trademark. The ™ symbol is for part of the feature name for comedic effect.
+  - FAKEFRAMES™ is not a trademark. The ™ symbol is part of the feature name for comedic effect.
 
 For a detailed explanation of the optimization techniques, see: [The Brutal Optimization of RPG Maker MV](https://tsdo.in/blog/optimizing-rmmv/)
