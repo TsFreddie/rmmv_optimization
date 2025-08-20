@@ -4,6 +4,8 @@
 
 これは雲天堂のゲーム（「ポリドッグパトロール」および「便機戦争」）のパフォーマンスを最適化するためのプラグイン集（オリジナルおよび派生）です。このリポジトリは雲天堂とは一切関係ありません。
 
+https://github.com/user-attachments/assets/3e4afcd1-4064-4af8-9e27-70129219b8c9
+
 ## ライセンスに関する注意
 
 以下のファイルは Triacontane の派生プラグインです：
@@ -35,8 +37,8 @@
 
 ```js
 $plugins.push(
-  { name: 'BruteForceOptimization', status: true, description: '', parameters: {} },
-  { name: 'BruteForceOptimizationPolidog', status: true, description: '', parameters: {} }
+  { name: "BruteForceOptimization", status: true, description: "", parameters: {"fakeframes": "true"} },
+  { name: "BruteForceOptimizationPolidog", status: true, description: "", parameters: {} }
 );
 ```
 
@@ -44,10 +46,14 @@ $plugins.push(
 
 ```js
 $plugins.push(
-  { name: 'BruteForceOptimization', status: true, description: '', parameters: {} },
-  { name: 'BruteForceOptimizationBenki', status: true, description: '', parameters: {} }
+  { name: "BruteForceOptimization", status: true, description: "", parameters: {"fakeframes": "true"} },
+  { name: "BruteForceOptimizationBenki", status: true, description: "", parameters: {} }
 );
 ```
+
+## 高リフレッシュレートモニターサポート
+
+このプラグインは、スプライトを補間することで高リフレッシュレートモニターのサポートを追加します（フェイクフレーム™と呼ばれます）。この機能はデフォルトで有効になっていますが、F6キーを押すことでこの機能を切り替えることができます。フェイクフレーム™はフレーム補間や画像生成ではないことに注意してください。この機能はスプライトの位置、回転、スケールを補間し、視覚的なアーティファクトは一切ありません。そのため、有効にしておくことをお勧めします。
 
 ## その他の RPG ツクール MV ゲーム
 
@@ -74,8 +80,8 @@ $plugins.push(
 - `PictureZIndex.js` の再構築：
   - ダーティフラグ付きの場合、描画前に画像をソート
   - フレーム毎に繰り返される重複ソート処理を削減
-- 高リフレッシュレートモニターをサポートする独自の フェイクフレーム ™（画像補間）フレームワークを実装
-  - フェイクフレーム ™ は商標ではありません。™ 記号は機能名の一部として、コメディ効果のために使用されています。
+- 高リフレッシュレートモニターをサポートする独自の フェイクフレーム™（画像補間）フレームワークを実装
+  - フェイクフレーム™ は商標ではありません。™ 記号は機能名の一部として、コメディ効果のために使用されています。
 
 最適化手法の詳しい説明については、以下（英語のみ）をご参照ください：
 [The Brutal Optimization of RPG Maker MV](https://tsdo.in/blog/optimizing-rmmv/)
